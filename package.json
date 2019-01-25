@@ -1,0 +1,34 @@
+{
+	"name": "therm-auth-api",
+	"version": "1.0.0",
+	"description": "",
+	"main": "app.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"start": "node app.js"
+	},
+	"engines": {
+		"node": "8.10.0"
+	},
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"async": "^2.6.1",
+		"bcrypt": "https://github.com/kelektiv/node.bcrypt.js.git#master",
+		"compression": "^1.7.3",
+		"dotenv": "^6.2.0",
+		"event-stream": "^4.0.1",
+		"express": "^4.16.3",
+		"forest-express-mongoose": "^2.15.2",
+		"helmet": "^3.13.0",
+		"joi": "^13.7.0",
+		"jsonwebtoken": "^8.3.0",
+		"lodash": "^4.17.11",
+		"moment": "^2.22.2",
+		"mongoose": "^5.2.11",
+		"mongoose-type-url": "^1.0.5",
+		"morgan": "^1.9.0",
+		"npm": "^6.4.1",
+		"winston": "^2.1.0"
+	}
+}
