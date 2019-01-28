@@ -1,11 +1,32 @@
 const Table = require("../models/table"),
   Issue = require("../models/issue"),
+  { View } = require("../models/view"),
   { Project } = require("../models/project"),
   { hasAccess } = require("../utils/lib"),
   { CustomError } = require("../utils/errors"),
   { NotFound, Unauthorized } = require("../utils/errorMessages"),
   { TABLE_CLASSES, ISSUE_CLASSES } = require("../constants"),
   { includes } = require("lodash");
+
+getProjectViews = async project => {
+  const aggregatedViews = await View.aggregate([
+    {
+      $lookup: {
+        from: "projects",
+        localField: "projects",
+        foreignField: "_id",
+        as: "projects"
+      }
+    },
+    {
+      $match: { projects: { $elemMatch: { uid: project.uid } } }
+    }
+  ]);
+
+  let viewUids = aggregatedViews.map(view => view.uid);
+  return await View.find({ uid: { $in: viewUids } });
+};
+
 addProjectFeatures = async (project, geoJson) => {
   const features = geoJson.features || [];
   const tableObjs = [];
@@ -43,6 +64,10 @@ addProjectFeatures = async (project, geoJson) => {
 
   await Issue.deleteMany({ project });
   await Issue.insertMany(issueObjs);
+
+  const views = await getProjectViews(project);
+  for (let view of views) view.save();
+  return true;
 };
 module.exports = {
   addProjectFeaturesView: async (req, res) => {
