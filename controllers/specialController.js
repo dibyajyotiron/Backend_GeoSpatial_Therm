@@ -1,6 +1,12 @@
 const { Project, validateProject } = require("../models/project"),
   { Group } = require("../models/group"),
   { Organization, validateOrganization } = require("../models/organization"),
+  { CustomError } = require("../utils/errors"),
+  {
+    Unauthenticated,
+    Unauthorized,
+    NotFound
+  } = require("../utils/errorMessages"),
   asyncMiddleware = require("../middleware/async");
 
 module.exports = {
@@ -11,13 +17,8 @@ module.exports = {
     let organizationId;
     // if organization doesn't exist
     if (!orgaExist) {
-      console.log("Not found!");
       const { error } = validateOrganization(organization);
-      if (error)
-        return res.status(400).json({
-          err: true,
-          reason: error.details[0].message
-        });
+      if (error) throw new CustomError(400, error.details[0].message);
 
       const newOrganization = new Organization(organization);
       const savedOrga = await newOrganization.save();
@@ -64,8 +65,8 @@ module.exports = {
           if (group.description) groupExist.description = group.description;
           if (group.readUsers) groupExist.readUsers = group.readUsers;
           if (group.writeUsers) groupExist.writeUsers = group.writeUsers;
-          // groupExist.owner.uid = req.user.uid;
-          // groupExist.owner.email = req.user.email;
+          groupExist.owner.uid = req.user.uid;
+          groupExist.owner.email = req.user.email;
           await groupExist.save();
           groupId = groupExist._id;
         }
@@ -77,11 +78,8 @@ module.exports = {
 
             if (!projectExist) {
               const { error } = validateProject(project);
-              if (error)
-                return res.status(400).json({
-                  err: true,
-                  reason: error.details[0].message
-                });
+              if (error) throw new CustomError(400, error.details[0].message);
+
               let { owner: projectOwner } = project;
               owner = projectOwner
                 ? projectOwner
