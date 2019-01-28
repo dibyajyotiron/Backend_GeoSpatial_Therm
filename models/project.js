@@ -72,9 +72,10 @@ projectSchema.pre("findOne", function(next) {
 projectSchema.pre("save", async function(next) {
   if (this.date) this.date.setHours(0, 0, 0, 0);
   let view = (await View.findOne({ fromProject: this })) || new View();
+  console.log(this.name);
   view.uid = view.uid
     ? view.uid
-    : `${view.name.split(" ").shift()}-UN_${Date.now()}`;
+    : `${this.name.split(" ").shift()}-UN_${Date.now()}`;
 
   console.log(view.uid);
   view.name = this.name;

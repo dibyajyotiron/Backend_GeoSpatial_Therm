@@ -10,7 +10,7 @@ const express = require("express"),
   error = require("../middleware/error");
 
 module.exports = function(app) {
-  app.use(express.json());
+  app.use(express.json({ limit: "50mb" }));
   app.use("/user", users); // Sign Up
   app.use("/user/login", auth); // Log In
   app.use("/user/organizations", organizations);

@@ -78,10 +78,10 @@ async function parseViews(views, queryParams) {
     let viewObj = pick(view, ["uid", "name", "description"]);
     if (complete) {
       viewObj.users = {};
-      viewObj.users.owner = view.owner;
-      viewObj.users.readOnly = view.read_users || [];
-      viewObj.users.readWrite = view.write_users || [];
-      viewObj.issueTypes = view.issueTypes || [];
+      viewObj.users.owner = { ...view.owner };
+      viewObj.users.readOnly = [...view.read_users] || [];
+      viewObj.users.readWrite = [...view.write_users] || [];
+      viewObj.issueTypes = [...view.issueTypes] || [];
       viewObj.temperatureMin = view.temperatures.min;
       viewObj.temperatureMax = view.temperatures.max;
       viewObj.organization = {
@@ -89,7 +89,7 @@ async function parseViews(views, queryParams) {
         name: (view.organization || {}).name
       };
     }
-    console.log(metrics);
+    // console.log(viewObj);
 
     if (groups || projects) {
       viewObj.groups = parseViewGroups(view, queryParams);
@@ -156,8 +156,8 @@ module.exports = {
     newView.projects = projectsWithWriteAccess;
     newView.polygon = req.body.polygon;
     newView.owner = { ...req.user };
-    newView.read_users = [...req.body.read_users];
-    newView.write_users = req.body.write_users ? [...req.body.write_users] : [];
+    // newView.read_users = [...req.body.read_users];
+    // newView.write_users = req.body.write_users ? [...req.body.write_users] : [];
     newView.important = true;
     await newView.save();
     return res.json({ error: false, message: "Successfully added views" });

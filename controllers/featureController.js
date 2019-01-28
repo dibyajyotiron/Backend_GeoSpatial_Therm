@@ -98,6 +98,6 @@ module.exports = {
       });
     }
 
-    throw new Error(403, Unauthorized);
+    throw new CustomError(403, Unauthorized);
   }
 };
