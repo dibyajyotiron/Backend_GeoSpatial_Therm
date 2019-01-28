@@ -1,5 +1,5 @@
 /node_modules
 /.env
 /LogFile.log
-/uncaughtExceptions
+/uncaughtExceptions.log
 # Env files should always be ignored.
