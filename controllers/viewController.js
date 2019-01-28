@@ -49,6 +49,7 @@ function parseViewGroups(view, queryParams) {
   let projects = JSON.parse(queryParams.projects || "false");
 
   let viewGroups = getViewGroups(view);
+  // console.log(viewGroups);
   let finalGroups = [];
 
   for (let group of viewGroups) {
@@ -88,11 +89,10 @@ async function parseViews(views, queryParams) {
         name: (view.organization || {}).name
       };
     }
-    console.log(viewObj);
+    console.log(metrics);
 
     if (groups || projects) {
       viewObj.groups = parseViewGroups(view, queryParams);
-      console.log(view);
     } else viewObj.groups = `${process.env["server"]}/views/${view.uid}/groups`;
     outputJSON.push(viewObj);
 
@@ -257,10 +257,11 @@ module.exports = {
       "name",
       "uid",
       "users",
-      "groups"
+      "groups",
+      "metrics"
     ]);
-    return res.json(filteredView);
-    // return res.json({ error: false, filterByProjects });
+    // return res.json(filteredView);
+    return res.json({ error: false, view: filteredView });
   },
   getAllViews: async (req, res) => {
     const { pageSize, pageNumber } = req.query;
