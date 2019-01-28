@@ -1,5 +1,6 @@
 const { View, validateView } = require("../models/view"),
   { Project } = require("../models/project"),
+  { Group } = require("../models/group"),
   { Organization } = require("../models/organization"),
   { CustomError } = require("../utils/errors"),
   { NotFound, Unauthorized } = require("../utils/errorMessages"),
@@ -292,5 +293,21 @@ module.exports = {
     });
     const resolvedViews = await Promise.all(finalResult);
     return res.json({ error: false, views: resolvedViews });
+  },
+  getViewGroupProjectsView: async (req, res) => {
+    const view = res.locals.view;
+    const group = await Group.findOne({
+      uid: String(req.params.groupUid),
+      active: true
+    });
+
+    if (!group) throw new CustomError(404, NotFound);
+    let parsedProjects = parseViewProjects(view, req.query, group);
+    return res.json(parsedProjects);
+  },
+  getViewGroupsView: async (req, res) => {
+    const view = res.locals.view;
+    let parsedGroups = parseViewGroups(view, req.query);
+    return res.json(parsedGroups);
   }
 };
