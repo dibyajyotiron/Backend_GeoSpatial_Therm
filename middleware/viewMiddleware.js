@@ -3,7 +3,7 @@ const { View } = require("../models/view"),
 
 validateView = async (req, res, next) => {
   const view = await View.findOne({
-    uid: req.params.viewUid,
+    uid: req.params.viewUID,
     active: true
   });
   if (!view) return res.status(404).json({ error: true, message: NotFound });

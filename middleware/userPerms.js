@@ -1,6 +1,5 @@
-const { InactiveUser, NotPermitted } = require("../utils/errorMessages"),
-  { CustomError } = require("../utils/errors");
-
+const { InactiveUser, NotPermitted } = require("../utils/errorMessages");
+const { includes } = require("lodash");
 const isActive = async (req, res, next) => {
   try {
     if (!req.user.isActive)
@@ -9,6 +8,13 @@ const isActive = async (req, res, next) => {
   } catch (ex) {
     return res.status(ex.statusCode).json({ err: true, reason: ex.message });
   }
+};
+const hasRoles = roles => {
+  return (req, res, next) => {
+    if (!includes(roles, req.user.role))
+      return res.status(403).json({ error: true, message: NotPermitted });
+    return next();
+  };
 };
 
 function isAdmin(req, res, next) {
@@ -38,5 +44,6 @@ const isBotOrAdmin = async (req, res, next) => {
 module.exports = {
   isActive,
   isAdmin,
-  isBotOrAdmin
+  isBotOrAdmin,
+  hasRoles
 };

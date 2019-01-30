@@ -7,6 +7,7 @@ const express = require("express"),
   special = require("../routes/special"),
   features = require("../routes/features"),
   views = require("../routes/views"),
+  metrics = require("../routes/metricRoutes"),
   error = require("../middleware/error");
 
 module.exports = function(app) {
@@ -19,6 +20,7 @@ module.exports = function(app) {
   app.use("/user/special", special);
   app.use("/user/features", features);
   app.use("/user/views", views);
+  app.use("/user/metrics", metrics);
 
   app.use(error);
 };

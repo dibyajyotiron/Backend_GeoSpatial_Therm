@@ -1,6 +1,10 @@
 module.exports.hasAccess = function(property, type, email) {
   return property[type].length > 0
-    ? JSON.parse(property[type].map(user => user.email === email).toString())
+    ? property[type]
+        .map(user => {
+          if (user.email === email) return true;
+        })
+        .toString()
     : false;
 };
 

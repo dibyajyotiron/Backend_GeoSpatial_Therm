@@ -3,10 +3,10 @@ const { View, validateView } = require("../models/view"),
   { Group } = require("../models/group"),
   { Organization } = require("../models/organization"),
   { CustomError } = require("../utils/errors"),
-  { NotFound, Unauthorized } = require("../utils/errorMessages"),
+  { NotFound } = require("../utils/errorMessages"),
   { hasAccess } = require("../utils/lib"),
-  { pick, uniqBy } = require("lodash"),
-  { intersectionWith } = require("lodash");
+  { getAllViews } = require("./baseViewController"),
+  { pick, uniqBy, intersectionWith } = require("lodash");
 
 function getViewProjects(view) {
   let viewProjects = uniqBy(view.projects || [], proj => proj.uid);
@@ -67,7 +67,6 @@ function parseViewGroups(view, queryParams) {
   return finalGroups;
 }
 async function parseViews(views, queryParams) {
-  // console.log(views);
   let complete = JSON.parse(queryParams.complete || "false");
   let metrics = JSON.parse(queryParams.metrics || "false");
   let groups = JSON.parse(queryParams.groups || "false");
@@ -78,12 +77,17 @@ async function parseViews(views, queryParams) {
     let viewObj = pick(view, ["uid", "name", "description"]);
     if (complete) {
       viewObj.users = {};
+      console.log(view.temperatures);
+      // viewObj.users.owner = view.owner;
+      // viewObj.users.readOnly = view.readUsers || [];
+      // viewObj.users.readWrite = view.writeUsers || [];
+      // viewObj.issueTypes = view.issueTypes || [];
       viewObj.users.owner = { ...view.owner };
-      viewObj.users.readOnly = [...view.read_users] || [];
-      viewObj.users.readWrite = [...view.write_users] || [];
+      viewObj.users.readOnly = [...view.readUsers] || [];
+      viewObj.users.readWrite = [...view.writeUsers] || [];
       viewObj.issueTypes = [...view.issueTypes] || [];
-      viewObj.temperatureMin = view.temperatures.min;
-      viewObj.temperatureMax = view.temperatures.max;
+      viewObj.temperatureMin = view.temperatures ? view.temperatures.min : "";
+      viewObj.temperatureMax = view.temperatures ? view.temperatures.max : "";
       viewObj.organization = {
         uid: (view.organization || {}).uid,
         name: (view.organization || {}).name
@@ -264,36 +268,49 @@ module.exports = {
     return res.json({ error: false, view: filteredView });
   },
   getAllViews: async (req, res) => {
-    const { pageSize, pageNumber } = req.query;
-
-    const allViews = await View.find({})
-      .skip(pageNumber > 0 ? (pageNumber - 1) * pageSize : 0)
-      .limit(JSON.parse(pageSize));
-    const { email } = req.user;
-    let hasViewReadAccess;
-    let hasViewWriteAccess;
-    let isViewOwner;
-    let hasAccessToViews = [];
-    let outputView;
-    let filteredView;
-
-    const finalResult = allViews.map(async view => {
-      // console.log(view);
-      hasViewReadAccess = hasAccess(view, "readUsers", email);
-      hasViewWriteAccess = hasAccess(view, "writeUsers", email);
-      isViewOwner = view.owner.email === email;
-      if (hasViewReadAccess || hasViewWriteAccess || isViewOwner) {
-        hasAccessToViews.push(view);
-        outputView = await parseViews([view], req.query);
-        // console.log(outputView);
-        filteredView = pick(outputView[0], ["name", "uid", "users", "groups"]);
-        // console.log(filteredView);
-        return filteredView;
-      }
-      throw new CustomError(403, Unauthorized);
-    });
-    const resolvedViews = await Promise.all(finalResult);
-    return res.json({ error: false, views: resolvedViews });
+    /**************Code below Works fine*********************/
+    // let { pageSize, pageNumber } = req.query;
+    // pageSize = pageSize > 0 ? JSON.parse(pageSize) : 10;
+    // pageNumber = pageNumber > 0 ? JSON.parse(pageNumber) : 1;
+    // console.log(pageNumber, pageSize);
+    // const allViews = await View.find({})
+    //   .lean()
+    //   .skip(pageNumber > 0 ? (pageNumber - 1) * pageSize : 0)
+    //   .limit(JSON.parse(pageSize));
+    // const { email } = req.user;
+    // let hasViewReadAccess;
+    // let hasViewWriteAccess;
+    // let isViewOwner;
+    // let hasAccessToViews = [];
+    // let outputView;
+    // let filteredView;
+    // const finalResult = allViews.map(async view => {
+    //   hasViewReadAccess = hasAccess(view, "readUsers", email);
+    //   hasViewWriteAccess = hasAccess(view, "writeUsers", email);
+    //   isViewOwner = view.owner.email === email;
+    //   if (hasViewReadAccess || hasViewWriteAccess || isViewOwner) {
+    //     hasAccessToViews.push(view);
+    //     outputView = await parseViews(hasAccessToViews, req.query);
+    //     filteredView = pick(outputView[0], [
+    //       "name",
+    //       "uid",
+    //       "groups",
+    //       "metrics",
+    //       "users",
+    //       "temperatureMin",
+    //       "temperatureMax"
+    //     ]);
+    //     return filteredView;
+    //   }
+    //   // throw new CustomError(404, NotFound);
+    // });
+    // const resolvedViews = await Promise.all(finalResult);
+    // const removedNull = resolvedViews.filter(el => el);
+    // return res.json({ error: false, views: removedNull });
+    /************** Above code Works fine*********************/
+    let views = await getAllViews(req.user, "read", req.query);
+    views = views.filter(v => v.active);
+    return res.json(await parseViews(views, req.query));
   },
   getViewGroupProjectsView: async (req, res) => {
     const view = res.locals.view;
