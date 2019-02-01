@@ -1,0 +1,4 @@
+- The groups/projects may not belong to any organization.
+- Replace *Ids with actual objects.
+- isBotAdmin, isAdmin is redundant.
+- use updateOne & upsert for updating/creating a record.

@@ -2,7 +2,8 @@ const { Project } = require("../models/project"),
   { includes } = require("lodash"),
   { getAllViews } = require("../controllers/baseViewController");
 
-async function hasProjectPerm(user, project, perm = "read") {
+async function hasProjectPerm(user, project, perm = "readUsers") {
+  console.log(project.checkPerm(user, perm));
   if (project.checkPerm(user, perm)) return true;
   if (project.group.checkPerm(user, perm)) return true;
   if (project.group.organization) {
@@ -16,19 +17,18 @@ async function hasProjectPerm(user, project, perm = "read") {
   }
   return false;
 }
-validateProject = async (req, res, next) => {
+const validateProject = async (req, res, next) => {
   const project = await Project.findOne({
     uid: String(req.params.projectUID),
     active: true
   });
-
   if (!project)
     return res.status(404).json({ error: true, message: "No Projects found!" });
   res.locals.project = project;
   return next();
 };
 
-checkProjectPerm = (perm = "read") => {
+const checkProjectPerm = (perm = "readUsers") => {
   return async (req, res, next) => {
     let project = res.locals.project;
     let user = req.user;

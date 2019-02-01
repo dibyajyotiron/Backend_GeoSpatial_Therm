@@ -1,5 +1,5 @@
 const mongoose = require("mongoose"),
-  { fromPairs, map, sum, values } = require("lodash"),
+  { fromPairs, sum, values } = require("lodash"),
   { polygonSchema } = require("./misc"),
   Issue = require("./issue"),
   Table = require("./table"),

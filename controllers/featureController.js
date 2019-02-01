@@ -6,9 +6,11 @@ const Table = require("../models/table"),
   { CustomError } = require("../utils/errors"),
   { NotFound, Unauthorized } = require("../utils/errorMessages"),
   { TABLE_CLASSES, ISSUE_CLASSES } = require("../constants"),
-  { includes } = require("lodash");
+  { getViewQuery, parseViewQueryParams } = require("./viewQueryController"),
+  { gzip } = require("node-gzip"),
+  { includes, flatMap } = require("lodash");
 
-getProjectViews = async project => {
+const getProjectViews = async project => {
   const aggregatedViews = await View.aggregate([
     {
       $lookup: {
@@ -27,7 +29,18 @@ getProjectViews = async project => {
   return await View.find({ uid: { $in: viewUids } });
 };
 
-addProjectFeatures = async (project, geoJson) => {
+const getProjectFeatures = async (project, queryParams = {}) => {
+  let { classNameFilter, temperatureFilter } = getViewQuery(queryParams);
+
+  let tableObjs = Table.find({ project: project });
+  let issueObjs = Issue.find({
+    $and: [{ project: project }, ...classNameFilter, ...temperatureFilter]
+  });
+  let projectFeatures = await Promise.all([tableObjs, issueObjs]);
+  return flatMap(projectFeatures);
+};
+
+const addProjectFeatures = async (project, geoJson) => {
   const features = geoJson.features || [];
   const tableObjs = [];
   const issueObjs = [];
@@ -69,6 +82,11 @@ addProjectFeatures = async (project, geoJson) => {
   for (let view of views) view.save();
   return true;
 };
+
+const parseFeaturesToGeoJson = features => {
+  return features.map(obj => obj.polygon);
+};
+
 module.exports = {
   addProjectFeaturesView: async (req, res) => {
     const { projectUid } = req.params;
@@ -99,5 +117,18 @@ module.exports = {
     }
 
     throw new CustomError(403, Unauthorized);
+  },
+  getProjectFeaturesView: async (req, res) => {
+    let queryParams = res.locals.view;
+    console.log(queryParams) ? parseViewQueryParams(res.locals.view) : {};
+    let projectFeatures = await getProjectFeatures(
+      res.locals.project,
+      queryParams
+    );
+    projectFeatures = parseFeaturesToGeoJson(projectFeatures);
+    let geoJson = { type: "FeatureCollection", features: projectFeatures };
+    let compressedGeojson = await gzip(JSON.stringify(geoJson));
+    res.setHeader("Content-Encoding", "gzip");
+    return res.send(compressedGeojson);
   }
 };

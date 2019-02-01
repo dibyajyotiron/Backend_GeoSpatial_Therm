@@ -162,13 +162,14 @@ module.exports = {
     let queryParams = res.locals.view
       ? parseViewQueryParams(res.locals.view)
       : {};
+    console.log("QP", queryParams);
 
     let issueCounts = await getProjectsIssueCounts(
       [res.locals.project.uid],
       queryParams
     );
+    console.log("IC", issueCounts);
     let metrics = parseIssueCounts(issueCounts);
-    console.log(metrics);
     return res.json(metrics);
   },
 

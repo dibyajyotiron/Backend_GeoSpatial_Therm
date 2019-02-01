@@ -1,5 +1,8 @@
 const { View } = require("./view"),
   { getViewMetrics } = require("./view"),
+  { includes } = require("lodash"),
+  { ALLOWED_ROLES } = require("../constants"),
+  plugins = require("./plugins"),
   mongoose = require("mongoose"),
   Joi = require("joi");
 
@@ -98,7 +101,7 @@ projectSchema.pre("save", async function(next) {
   //   ];
 
   // update metrics on view save
-  view.metrics = await getViewMetrics(view);
+  // view.metrics = await getViewMetrics(view);
   //   console.log(view.metrics);
   await view.save();
   next();
@@ -133,6 +136,8 @@ function validate(project) {
   };
   return Joi.validate(project, schema);
 }
+
+projectSchema.plugin(plugins.userPermissions);
 
 module.exports.userSchema = userSchema;
 module.exports.Project = mongoose.model("Project", projectSchema);
