@@ -3,10 +3,10 @@ const { View, validateView } = require("../models/view"),
   { Group } = require("../models/group"),
   { Organization } = require("../models/organization"),
   { CustomError } = require("../utils/errors"),
-  { NotFound } = require("../utils/errorMessages"),
+  { NotFound, Unauthorized } = require("../utils/errorMessages"),
   { hasAccess } = require("../utils/lib"),
   { getAllViews } = require("./baseViewController"),
-  { pick, uniqBy, intersectionWith } = require("lodash");
+  { pick, uniqBy, includes, intersectionWith } = require("lodash");
 
 function getViewProjects(view) {
   let viewProjects = uniqBy(view.projects || [], proj => proj.uid);
@@ -108,9 +108,13 @@ async function parseViews(views, queryParams) {
 
 module.exports = {
   createOrUpdate: async (req, res) => {
+    const update = includes(["/update", "/update/"], req.url);
+    let foundView;
+
     const { read_users, write_users } = req.body;
     const { email } = req.user;
     const { orgUid } = req.params;
+    const { projects } = req.body;
 
     if (
       (req.body.temperatures &&
@@ -136,10 +140,58 @@ module.exports = {
         "One of the read users is also inside write users!"
       );
 
+    if (req.body.uid && update) {
+      foundView = await View.findOne({ uid: req.body.uid });
+      if (!foundView) throw new CustomError(404, NotFound);
+
+      if (!foundView.checkPerm(req.user, "writeUsers"))
+        throw new CustomError(403, Unauthorized);
+
+      foundView.issueTypes = req.body.foundView
+        ? req.body.foundView
+        : foundView.issueTypes;
+
+      foundView.temperatures =
+        Object.keys(req.body.temperatures).length > 0
+          ? { ...req.body.temperatures }
+          : foundView.temperatures;
+
+      foundView.writeUsers =
+        write_users.length > 0 ? [...write_users] : foundView.writeUsers;
+
+      foundView.readUsers =
+        read_users.length > 0 ? [...read_users] : foundView.readUsers;
+
+      foundView.name = req.body.name ? req.body.name : foundView.name;
+
+      const foundProjects = await Project.find({
+        uid: { $in: projects }
+      });
+      let projectsWithWriteAccess = [];
+      for (let project of foundProjects) {
+        const hasProjectWriteAccess = hasAccess(project, "writeUsers", email);
+        const isProjectOwner = project.owner.email === email;
+
+        if (hasProjectWriteAccess || isProjectOwner)
+          projectsWithWriteAccess.push(project);
+      }
+      if (!projectsWithWriteAccess.length)
+        throw new CustomError(
+          400,
+          "Provide projects where you've write access!"
+        );
+      foundView.projects = req.body.projects
+        ? projectsWithWriteAccess
+        : foundView.projects;
+
+      foundView.polygon = req.body.polygon
+        ? req.body.polygon
+        : foundView.polygon;
+    }
+
     const { error } = validateView(req.body);
 
     if (error) throw new CustomError(400, error.details[0].message);
-    const { projects } = req.body;
 
     const foundProjects = await Project.find({ uid: { $in: projects } });
     let projectsWithWriteAccess = [];
@@ -167,94 +219,6 @@ module.exports = {
     return res.json({ error: false, message: "Successfully added views" });
   },
   fetchView: async (req, res) => {
-    // const { viewUid } = req.params;
-    // const { email } = req.user;
-
-    // const view = await View.findOne(
-    //   { uid: viewUid, active: true },
-    //   "name uid read_users write_users owner temperatures projects metrics"
-    // ).lean();
-    // const hasViewReadAccess = hasAccess(view, "read_users", email);
-    // const hasViewWriteAccess = hasAccess(view, "write_users", email);
-    // const isViewOwner = view.owner.email === email;
-
-    // if (!hasViewReadAccess || !hasViewWriteAccess || !isViewOwner) {
-    //   throw new CustomError(403, Unauthorized);
-    // }
-
-    //*********** */ Fix the code beneath ******************
-
-    // const newView = {};
-    // const projectsInView = [...view.projects];
-    // console.log(projectsInView);
-    // const groupsId = view.projects.map(el => el.group._id);
-    // console.log(groupsId + "GID");
-    // const groupsUid = view.projects.map(el => el.group.uid);
-    // console.log(groupsUid + "GUID");
-    // const groupsName = view.projects.map(el => el.group.name);
-
-    // newView["name"] = view.name;
-    // newView["uid"] = view.uid;
-    // newView["groups"] = `${process.env["server"]}/views/${
-    //   view.uid
-    // }/groups/${groupsId}`;
-
-    // const { complete, groups, metrics, projects } = req.query;
-    // let filterByComplete, filterByGroups, filterByMetrics, filterByProjects;
-
-    // if (complete && JSON.parse(complete)) {
-    //   newView["users"] = {
-    //     owner: view.owner,
-    //     readOnly: view.read_users,
-    //     readWrite: view.write_users
-    //   };
-    //   filterByComplete = { ...newView };
-    //   // newView["metrics"] = `${process.env["server"]}/views/${view.uid}/metrics`;
-    // }
-    // if (!complete || !JSON.parse(complete)) filterByComplete = { ...newView };
-
-    // if (groups && JSON.parse(groups)) {
-    //   filterByComplete["groups"] = [
-    //     {
-    //       uid: groupsUid.toString(),
-    //       name: groupsName.toString(),
-    //       projects: `${process.env["server"]}/views/${
-    //         view.uid
-    //       }/projects/${groupsUid}/projects`
-    //     }
-    //   ];
-    //   filterByGroups = { ...filterByComplete };
-    // }
-    // if (!groups || !JSON.parse(groups))
-    //   filterByGroups = { ...filterByComplete };
-
-    // if (projects && JSON.parse(projects)) {
-    //   if (filterByGroups.users) {
-    //     filterByGroups.groups.forEach(
-    //       el =>
-    //         (el["projects"] = [
-    //           (({ uid, name, data }) => ({ uid, name, data }))(
-    //             ...projectsInView
-    //           )
-    //         ])
-    //     );
-    //     filterByProjects = { ...filterByGroups };
-    //     // console.log(filterByProjects);
-    //   }
-    //   if (!filterByGroups.users) {
-    //     filterByGroups.groups.forEach(
-    //       el =>
-    //         (el["projects"] = [
-    //           (({ uid, name }) => ({ uid, name }))(...projectsInView)
-    //         ])
-    //     );
-    //   }
-    // }
-    // if (!projects || !JSON.parse(projects)) {
-    //   filterByProjects = { ...filterByGroups };
-    // }
-
-    // ************** Fix the code above ************* //
     const view = res.locals.view;
     const outputView = await parseViews([view], req.query);
     const filteredView = pick(outputView[0], [
@@ -264,7 +228,6 @@ module.exports = {
       "groups",
       "metrics"
     ]);
-    // return res.json(filteredView);
     return res.json({ error: false, view: filteredView });
   },
   getAllViews: async (req, res) => {

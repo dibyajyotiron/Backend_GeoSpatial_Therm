@@ -16,18 +16,19 @@ const {
 
 router.post(
   "/project/:projectUid",
+  validateProject,
   [auth, hasRoles(ALLOWED_ROLES)],
   asyncMiddleware(addProjectFeaturesView)
 );
 
 router.get(
-  "/project/:projectUID",
+  "/project/:projectUid",
   [auth, validateProject, hasRoles(ALLOWED_ROLES)],
   getProjectFeaturesView
 );
 
 router.get(
-  "/view/:viewUID/project/:projectUID",
+  "/view/:viewUid/project/:projectUid",
   [
     auth,
     validateView,

@@ -19,21 +19,21 @@ const router = require("express").Router(),
   } = require("../controllers/metricController");
 
 router.get(
-  "/project/:projectUID/counts/issues",
+  "/project/:projectUid/counts/issues",
   auth,
   validateProject,
   hasRoles(ALLOWED_ROLES),
   getProjectIssueCountsView
 );
 router.get(
-  "/project/:projectUID/counts/modules",
+  "/project/:projectUid/counts/modules",
   auth,
   validateProject,
   hasRoles(ALLOWED_ROLES),
   getProjectModuleCountsView
 );
 router.get(
-  "/project/:projectUID/issues/temperatures",
+  "/project/:projectUid/issues/temperatures",
   auth,
   validateProject,
   hasRoles(ALLOWED_ROLES),
@@ -41,35 +41,35 @@ router.get(
 );
 
 router.get(
-  "/view/:viewUID",
+  "/view/:viewUid",
   auth,
   validateView,
   checkViewPerm("read"),
   getViewMetricsView
 );
 router.get(
-  "/view/:viewUID/counts/issues",
+  "/view/:viewUid/counts/issues",
   auth,
   validateView,
   checkViewPerm("read"),
   getViewIssueCountsView
 );
 router.get(
-  "/view/:viewUID/counts/modules",
+  "/view/:viewUid/counts/modules",
   auth,
   validateView,
   checkViewPerm("read"),
   getViewModuleCountsView
 );
 router.get(
-  "/view/:viewUID/counts/issues/project",
+  "/view/:viewUid/counts/issues/project",
   auth,
   validateView,
   checkViewPerm("read"),
   getViewIssueCountsByProjectView
 );
 router.get(
-  "/view/:viewUID/issues/temperatures",
+  "/view/:viewUid/issues/temperatures",
   auth,
   validateView,
   checkViewPerm("read"),
@@ -77,7 +77,7 @@ router.get(
 );
 
 router.get(
-  "/view/:viewUID/project/:projectUID/counts/issues",
+  "/view/:viewUid/project/:projectUid/counts/issues",
   auth,
   validateView,
   checkViewPerm("read"),
@@ -87,7 +87,7 @@ router.get(
 );
 
 router.get(
-  "/view/:viewUID/project/:projectUID/counts/modules",
+  "/view/:viewUid/project/:projectUid/counts/modules",
 
   auth,
   validateView,
@@ -98,7 +98,7 @@ router.get(
 );
 
 router.get(
-  "/view/:viewUID/project/:projectUID/issues/temperatures",
+  "/view/:viewUid/project/:projectUid/issues/temperatures",
   auth,
   validateView,
   checkViewPerm("read"),

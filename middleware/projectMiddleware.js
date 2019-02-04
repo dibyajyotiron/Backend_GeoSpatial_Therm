@@ -19,7 +19,7 @@ async function hasProjectPerm(user, project, perm = "readUsers") {
 }
 const validateProject = async (req, res, next) => {
   const project = await Project.findOne({
-    uid: String(req.params.projectUID),
+    uid: String(req.params.projectUid),
     active: true
   });
   if (!project)

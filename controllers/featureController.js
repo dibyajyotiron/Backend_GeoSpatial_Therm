@@ -4,7 +4,7 @@ const Table = require("../models/table"),
   { Project } = require("../models/project"),
   { hasAccess } = require("../utils/lib"),
   { CustomError } = require("../utils/errors"),
-  { NotFound, Unauthorized } = require("../utils/errorMessages"),
+  { BadRequest, Unauthorized } = require("../utils/errorMessages"),
   { TABLE_CLASSES, ISSUE_CLASSES } = require("../constants"),
   { getViewQuery, parseViewQueryParams } = require("./viewQueryController"),
   { gzip } = require("node-gzip"),
@@ -89,35 +89,18 @@ const parseFeaturesToGeoJson = features => {
 
 module.exports = {
   addProjectFeaturesView: async (req, res) => {
-    const { projectUid } = req.params;
-    console.log(typeof uid);
-    const project = await Project.findOne({ uid: projectUid });
+    const project = res.locals.project;
 
     console.log(project);
 
-    if (!project) throw new CustomError(404, NotFound);
-
-    const hasProjectReadAccess = hasAccess(
-      project,
-      "readUsers",
-      req.user.email
-    );
-    const hasProjectWriteAccess = hasAccess(
-      project,
-      "writeUsers",
-      req.user.email
-    );
-
-    if (hasProjectReadAccess || hasProjectWriteAccess) {
-      await addProjectFeatures(project, req.body);
-      return res.json({
-        success: true,
-        message: "Successfully added features to the project"
-      });
-    }
-
-    throw new CustomError(403, Unauthorized);
+    const addedFeatures = await addProjectFeatures(project, req.body);
+    if (!addedFeatures) throw new CustomError(406, BadRequest);
+    return res.json({
+      success: true,
+      message: "Successfully added features to the project"
+    });
   },
+
   getProjectFeaturesView: async (req, res) => {
     let queryParams = res.locals.view;
     console.log(queryParams) ? parseViewQueryParams(res.locals.view) : {};
