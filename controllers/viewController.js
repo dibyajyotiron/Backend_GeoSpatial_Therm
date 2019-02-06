@@ -6,6 +6,9 @@ const { View, validateView } = require("../models/view"),
   { NotFound, Unauthorized } = require("../utils/errorMessages"),
   { hasAccess } = require("../utils/lib"),
   { getAllViews } = require("./baseViewController"),
+  { updateView } = require("./viewSubcontroller/update"),
+  { create } = require("./viewSubcontroller/create"),
+  { validateBodyView } = require("./viewSubcontroller/checkViewFiltering"),
   { pick, uniqBy, includes, intersectionWith } = require("lodash");
 
 function getViewProjects(view) {
@@ -108,115 +111,22 @@ async function parseViews(views, queryParams) {
 
 module.exports = {
   createOrUpdate: async (req, res) => {
-    const update = includes(["/update", "/update/"], req.url);
-    let foundView;
-
-    const { read_users, write_users } = req.body;
-    const { email } = req.user;
-    const { orgUid } = req.params;
-    const { projects } = req.body;
-
-    if (
-      (req.body.temperatures &&
-        Object.keys(req.body.temperatures).length > 0) ||
-      (req.body.issueTypes && req.body.issueTypes.length > 0)
-    ) {
-      if (req.body.write_users && req.body.write_users.length > 0)
-        throw new CustomError(
-          400,
-          "Filtering is not allowed when write user access is being provided!"
-        );
-    }
-
-    if (
-      intersectionWith(
-        read_users,
-        write_users,
-        (obj1, obj2) => obj1.email === obj2.email
-      ).length
-    )
-      throw new CustomError(
-        400,
-        "One of the read users is also inside write users!"
-      );
+    const update = req.url.split("/").includes("update");
+    validateBodyView(req);
 
     if (req.body.uid && update) {
-      foundView = await View.findOne({ uid: req.body.uid });
-      if (!foundView) throw new CustomError(404, NotFound);
-
-      if (!foundView.checkPerm(req.user, "writeUsers"))
-        throw new CustomError(403, Unauthorized);
-
-      foundView.issueTypes = req.body.foundView
-        ? req.body.foundView
-        : foundView.issueTypes;
-
-      foundView.temperatures =
-        Object.keys(req.body.temperatures).length > 0
-          ? { ...req.body.temperatures }
-          : foundView.temperatures;
-
-      foundView.writeUsers =
-        write_users.length > 0 ? [...write_users] : foundView.writeUsers;
-
-      foundView.readUsers =
-        read_users.length > 0 ? [...read_users] : foundView.readUsers;
-
-      foundView.name = req.body.name ? req.body.name : foundView.name;
-
-      const foundProjects = await Project.find({
-        uid: { $in: projects }
+      await updateView(req);
+      return res.json({
+        success: true,
+        message: `Successfully updated view with uid ${req.body.uid}!`
       });
-      let projectsWithWriteAccess = [];
-      for (let project of foundProjects) {
-        const hasProjectWriteAccess = hasAccess(project, "writeUsers", email);
-        const isProjectOwner = project.owner.email === email;
-
-        if (hasProjectWriteAccess || isProjectOwner)
-          projectsWithWriteAccess.push(project);
-      }
-      if (!projectsWithWriteAccess.length)
-        throw new CustomError(
-          400,
-          "Provide projects where you've write access!"
-        );
-      foundView.projects = req.body.projects
-        ? projectsWithWriteAccess
-        : foundView.projects;
-
-      foundView.polygon = req.body.polygon
-        ? req.body.polygon
-        : foundView.polygon;
     }
 
     const { error } = validateView(req.body);
-
     if (error) throw new CustomError(400, error.details[0].message);
 
-    const foundProjects = await Project.find({ uid: { $in: projects } });
-    let projectsWithWriteAccess = [];
-    for (let project of foundProjects) {
-      const hasProjectWriteAccess = hasAccess(project, "writeUsers", email);
-      const isProjectOwner = project.owner.email === email;
-
-      if (hasProjectWriteAccess || isProjectOwner)
-        projectsWithWriteAccess.push(project);
-    }
-    if (!projectsWithWriteAccess.length)
-      throw new CustomError(400, "Provide projects where you've write access!");
-    const foundOrg = await Organization.findById(orgUid);
-    if (!foundOrg) throw new CustomError(404, NotFound);
-
-    const newView = new View(req.body);
-    newView.uid = `${newView.name.split(" ").shift()}-UN_${Date.now()}`;
-    newView.projects = projectsWithWriteAccess;
-    newView.polygon = req.body.polygon;
-    newView.owner = { ...req.user };
-    // newView.read_users = [...req.body.read_users];
-    // newView.write_users = req.body.write_users ? [...req.body.write_users] : [];
-    newView.important = true;
-    await newView.save();
-    return res.json({ error: false, message: "Successfully added views" });
+    await create(req);
+    return res.json({ success: true, message: "Successfully added views" });
   },
   fetchView: async (req, res) => {
     const view = res.locals.view;
@@ -228,7 +138,7 @@ module.exports = {
       "groups",
       "metrics"
     ]);
-    return res.json({ error: false, view: filteredView });
+    return res.json({ view: filteredView });
   },
   getAllViews: async (req, res) => {
     /**************Code below Works fine*********************/
@@ -269,7 +179,7 @@ module.exports = {
     // });
     // const resolvedViews = await Promise.all(finalResult);
     // const removedNull = resolvedViews.filter(el => el);
-    // return res.json({ error: false, views: removedNull });
+    // return res.json({ views: removedNull });
     /************** Above code Works fine*********************/
     let views = await getAllViews(req.user, "read", req.query);
     views = views.filter(v => v.active);

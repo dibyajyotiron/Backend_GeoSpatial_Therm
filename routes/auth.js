@@ -29,7 +29,7 @@ router.post(
       user.password
     );
     if (!validPassword) throw new CustomError(400, InvalidUser);
-    // return res.status(400).json({ err: true, reason: "Invalid password!" });
+    // return res.status(400).json({ error: true, reason: "Invalid password!" });
 
     const token = user.generateAuthToken();
 

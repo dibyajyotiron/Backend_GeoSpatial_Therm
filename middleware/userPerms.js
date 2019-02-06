@@ -6,7 +6,7 @@ const isActive = async (req, res, next) => {
       return res.status(403).json({ error: true, message: InactiveUser });
     return next();
   } catch (ex) {
-    return res.status(ex.statusCode).json({ err: true, reason: ex.message });
+    return res.status(ex.statusCode).json({ error: true, reason: ex.message });
   }
 };
 const hasRoles = roles => {
@@ -21,7 +21,7 @@ function isAdmin(req, res, next) {
   try {
     if (!req.user.role || req.user.role !== "admin")
       return res.status(403).json({
-        err: true,
+        error: true,
         reason: "Only admin users can perform this action"
       });
     return next();
@@ -37,7 +37,7 @@ const isBotOrAdmin = async (req, res, next) => {
     }
     return next();
   } catch (ex) {
-    return res.status(ex.statusCode).json({ err: true, reason: ex.message });
+    return res.status(ex.statusCode).json({ error: true, reason: ex.message });
   }
 };
 

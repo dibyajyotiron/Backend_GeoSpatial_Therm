@@ -1,22 +1,22 @@
 const { User, validate } = require("../models/user"),
-	{ pick } = require("lodash"),
-	bcrypt = require("bcrypt"),
-	moment = require("moment"),
-	express = require("express"),
-	asyncMiddleware = require("../middleware/async"),
-	router = express.Router();
+  { pick } = require("lodash"),
+  bcrypt = require("bcrypt"),
+  moment = require("moment"),
+  express = require("express"),
+  asyncMiddleware = require("../middleware/async"),
+  router = express.Router();
 
 // All registered users
 
 router.get(
-	"/all",
-	asyncMiddleware(async (req, res) => {
-		const users = await User.find()
-			.select("_id name email")
-			.sort({ name: 1 });
-		console.log(users);
-		return res.json({ users: users });
-	}),
+  "/all",
+  asyncMiddleware(async (req, res) => {
+    const users = await User.find()
+      .select("_id name email")
+      .sort({ name: 1 });
+    console.log(users);
+    return res.json({ users: users });
+  })
 );
 
 // Register a new User
@@ -30,35 +30,35 @@ router.get(
 // Otherwise you'll get error!
 
 router.post(
-	"/register",
-	asyncMiddleware(async (req, res) => {
-		const { error } = validate(req.body);
-		if (error)
-			return res
-				.status(400)
-				.json({ err: true, reason: error.details[0].message });
+  "/register",
+  asyncMiddleware(async (req, res) => {
+    const { error } = validate(req.body);
+    if (error)
+      return res
+        .status(400)
+        .json({ error: true, reason: error.details[0].message });
 
-		let user = await User.findOne({ email: req.body.email });
-		if (user)
-			return res
-				.status(400)
-				.json({ err: true, reason: "User already exists!" });
+    let user = await User.findOne({ email: req.body.email });
+    if (user)
+      return res
+        .status(400)
+        .json({ error: true, reason: "User already exists!" });
 
-		// if (!moment(req.body.DOB, "MM/DD/YYYY").isValid()) {
-		// 	return res
-		// 		.status(400)
-		// 		.json({ err: true, reason: "Date format should be MM/DD/YYYY" });
-		// }
-		user = new User(pick(req.body, ["username", "email", "password"]));
-		const salt = await bcrypt.genSalt(10);
-		user.password = await bcrypt.hash(user.password, salt);
-		await user.save();
-		const token = user.generateAuthToken();
+    // if (!moment(req.body.DOB, "MM/DD/YYYY").isValid()) {
+    // 	return res
+    // 		.status(400)
+    // 		.json({ error: true, reason: "Date format should be MM/DD/YYYY" });
+    // }
+    user = new User(pick(req.body, ["username", "email", "password"]));
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(user.password, salt);
+    await user.save();
+    const token = user.generateAuthToken();
 
-		return res
-			.header("x-auth-token", token)
-			.json({ id: user._id, message: "Registration successful!" });
-	}),
+    return res
+      .header("x-auth-token", token)
+      .json({ id: user._id, message: "Registration successful!" });
+  })
 );
 
 module.exports = router;

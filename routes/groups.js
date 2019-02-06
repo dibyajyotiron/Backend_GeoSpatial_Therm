@@ -19,13 +19,13 @@ router.get(
     if (!foundGroup) throw new CustomError(404, NotFound);
     const { email } = req.user;
     const isGroupOwner = foundGroup.owner.email === email;
-    if (isGroupOwner) return res.json({ err: false, group: foundGroup });
+    if (isGroupOwner) return res.json({ success: true, group: foundGroup });
 
     const hasGroupWriteAccess = hasAccess(foundGroup, "writeUsers", email);
     const hasGroupReadAccess = hasAccess(foundGroup, "readUsers", email);
 
     if (hasGroupReadAccess || hasGroupWriteAccess) {
-      return res.json({ err: false, group: foundGroup });
+      return res.json({ group: foundGroup });
     }
 
     throw new CustomError(403, Unauthorized);
@@ -48,7 +48,7 @@ router.get(
         ? readAccessGroups
         : "You don't have access to any of the groups";
     console.log(req.user.email);
-    return res.json({ err: false, groups: readAccessGroups });
+    return res.json({ groups: readAccessGroups });
   })
 );
 
@@ -70,7 +70,7 @@ router.get(
         ? writeAccessGroups
         : "You don't have write access to any of the groups";
     console.log(req.user.email);
-    return res.json({ err: false, groups: writeAccessGroups });
+    return res.json({ groups: writeAccessGroups });
   })
 );
 
@@ -80,13 +80,12 @@ router.post(
     const { error } = validateGroup(req.body);
     if (error)
       return res.status(400).json({
-        err: true,
+        error: true,
         reason: error.details[0].message
       });
     const newGroup = new Group(req.body);
     const savedGroup = await newGroup.save();
     return res.json({
-      err: false,
       group: savedGroup
     });
   })

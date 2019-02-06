@@ -17,6 +17,12 @@ router.post(
   [auth, isActive, isBotOrAdmin],
   asyncMiddleware(createOrUpdate)
 );
+router.post(
+  "/update/org/:orgUid",
+  [auth, isActive, isBotOrAdmin],
+  asyncMiddleware(createOrUpdate)
+);
+
 router.get("/", [auth, isActive, isBotOrAdmin], asyncMiddleware(getAllViews));
 
 router.get(

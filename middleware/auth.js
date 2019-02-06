@@ -12,7 +12,7 @@ function auth(req, res, next) {
 
     next();
   } catch (ex) {
-    res.status(400).json({ err: true, reason: "Invalid token!" });
+    res.status(400).json({ error: true, reason: "Invalid token!" });
   }
 }
 

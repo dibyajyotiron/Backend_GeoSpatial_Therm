@@ -1,12 +1,7 @@
 const { Project, validateProject } = require("../models/project"),
   { Group } = require("../models/group"),
-  { Organization, validateOrganization } = require("../models/organization"),
+  { Organization } = require("../models/organization"),
   { CustomError } = require("../utils/errors"),
-  {
-    Unauthenticated,
-    Unauthorized,
-    NotFound
-  } = require("../utils/errorMessages"),
   asyncMiddleware = require("../middleware/async");
 
 module.exports = {
@@ -17,7 +12,7 @@ module.exports = {
       name: orgName,
       active: orgActive = "true"
     } = organization;
-    console.log(orgaUid);
+
     orgaExist = orgaUid ? await Organization.findOne({ uid: orgaUid }) : {};
 
     if (orgaUid) {
@@ -122,6 +117,6 @@ module.exports = {
       }
       // }
     }
-    return res.json({ err: false, message: "Successfully imported data!" });
+    return res.json({ success: true, message: "Successfully imported data!" });
   })
 };
