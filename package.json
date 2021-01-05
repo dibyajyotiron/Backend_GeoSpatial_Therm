@@ -17,7 +17,7 @@
 		"@okta/oidc-middleware": "^1.0.2",
 		"@okta/okta-sdk-nodejs": "^1.2.0",
 		"async": "^2.6.1",
-		"axios": "^0.18.1",
+		"axios": "^0.21.1",
 		"bcrypt": "https://github.com/kelektiv/node.bcrypt.js.git#master",
 		"compression": "^1.7.3",
 		"dotenv": "^6.2.0",
