@@ -16,7 +16,7 @@
 		"@okta/jwt-verifier": "0.0.14",
 		"@okta/oidc-middleware": "^1.0.2",
 		"@okta/okta-sdk-nodejs": "^1.2.0",
-		"async": "^2.6.1",
+		"async": "^2.6.4",
 		"axios": "^0.18.1",
 		"bcrypt": "https://github.com/kelektiv/node.bcrypt.js.git#master",
 		"compression": "^1.7.3",
